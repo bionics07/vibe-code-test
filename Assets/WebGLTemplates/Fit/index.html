@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0b0c12; overflow: hidden; }
+    #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    /* Phones fill the screen; larger windows get a centered 9:16 canvas that always fits. */
+    #unity-canvas { display: block; width: min(100vw, calc(100dvh * 9 / 16)); height: min(100dvh, calc(100vw * 16 / 9)); touch-action: none; outline: none; }
+    .mobile #unity-canvas { width: 100vw; height: 100dvh; }
+    #loading { position: fixed; left: 50%; top: 50%; width: 200px; height: 6px; margin: -3px 0 0 -100px; background: #262938; border-radius: 3px; overflow: hidden; }
+    #bar { width: 0; height: 100%; background: #4a78f2; }
+    #error { display: none; position: fixed; inset: auto 16px 16px; padding: 12px; background: #5c1f1f; color: #fff; font: 14px system-ui, sans-serif; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
+  <div id="loading"><div id="bar"></div></div>
+  <div id="error"></div>
+  <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+  <script>
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add("mobile");
+    }
+
+    function showError(message, type) {
+      if (type !== "error") return;
+      const element = document.getElementById("error");
+      element.textContent = message;
+      element.style.display = "block";
+    }
+
+    createUnityInstance(document.getElementById("unity-canvas"), {
+      arguments: [],
+      dataUrl: "Build/{{{ DATA_FILENAME }}}",
+      frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl: "Build/{{{ CODE_FILENAME }}}",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      devicePixelRatio: Math.min(window.devicePixelRatio, 2),
+      showBanner: showError,
+    }, (progress) => {
+      document.getElementById("bar").style.width = `${progress * 100}%`;
+    }).then(() => {
+      document.getElementById("loading").style.display = "none";
+    }).catch((error) => showError(String(error), "error"));
+  </script>
+</body>
+</html>
