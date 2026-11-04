@@ -22,12 +22,37 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1138d66ac17513d4b87422d18aa9fe1f, type: 2}
   cellGapRatio: 0.13
   boardPaddingRatio: 0.22
-  iconInsetRatio: 0.06
+  markInsetRatio: 0.14
+  catInsetRatio: -0.05
+  cellCornerRadius: 16
+  panelCornerRadius: 36
+  pillCornerRadius: 80
+  popInDuration: 0.25
+  mistakeShakeDuration: 0.35
+  mistakeShakeDistance: 14
+  mistakeShakeOscillations: 3
+  catCounterPunchDuration: 0.3
+  catCounterPunchScale: 0.3
+  resultPanelDelay: 0.7
   sideMargin: 40
-  hudTopMargin: 40
-  hudHeight: 140
-  boardBottomMargin: 240
-  hudFontSize: 54
+  hudTopMargin: 30
+  hudHeight: 500
+  boardBottomMargin: 60
+  backButtonSize: 120
+  hudTitleRowHeight: 170
+  hudPillRowTop: 185
+  hudPillRowHeight: 110
+  hudRulesTop: 310
+  hudRulesHeight: 190
+  levelCaption: Level
+  ruleTexts:
+  - 1 Cat per color
+  - 1 Cat per column and row
+  - Cats cannot touch
+  hudCaptionFontSize: 52
+  hudNumberFontSize: 60
+  hudCounterFontSize: 58
+  ruleFontSize: 32
   resultTitleFontSize: 64
   resultButtonFontSize: 56
   resultPanelSize: {x: 820, y: 520}
@@ -38,6 +63,14 @@ MonoBehaviour:
   mistakeColor: {r: 1, g: 0.41568628, b: 0.16862746, a: 1}
   dimColor: {r: 0, g: 0, b: 0, a: 0.55}
   resultButtonColor: {r: 0.56078434, g: 0.8509804, b: 0.49411765, a: 1}
+  cardColor: {r: 1, g: 1, b: 1, a: 1}
+  ruleCardColor: {r: 0.972549, g: 0.94509804, b: 0.9254902, a: 1}
+  ruleCellColor: {r: 0.6509804, g: 0.43137255, b: 0.29411766, a: 1}
+  ruleEmptyCellColor: {r: 0.8901961, g: 0.8039216, b: 0.73333335, a: 1}
+  catCountColor: {r: 0.18431373, g: 0.7019608, b: 0.26666668, a: 1}
+  lifeColor: {r: 1, g: 0.5411765, b: 0.23529412, a: 1}
+  lifeLostColor: {r: 0.96862745, g: 0.87058824, b: 0.8156863, a: 1}
+  softShadowColor: {r: 0, g: 0, b: 0, a: 0.08}
   regionColors:
   - region: 0
     value: {r: 0.98039216, g: 0.8509804, b: 0.52156866, a: 1}
@@ -60,16 +93,29 @@ MonoBehaviour:
   - region: 9
     value: {r: 0.6509804, g: 0.43137255, b: 0.29411766, a: 1}
   streakLevelIndex: 0
-  streakTitle: day streak!
+  streakScreenTitle: Daily Streak
+  streakCurrentLabel: Current Streak
+  streakBestFormat: 'Best Streak: {0}'
   streakContinueLabel: Continue
-  streakWeekLetters: SMTWTFS
+  streakWeekLabels:
+  - SUN
+  - MON
+  - TUE
+  - WED
+  - THU
+  - FRI
+  - SAT
+  streakScreenTitleFontSize: 56
   streakNumberFontSize: 220
-  streakTitleFontSize: 84
+  streakCurrentFontSize: 72
+  streakBestFontSize: 48
   streakWeekFontSize: 44
-  streakFlameInDuration: 0.45
+  streakBackgroundColor: {r: 0.9843137, g: 0.94509804, b: 0.8745098, a: 1}
+  streakHeaderColor: {r: 0.9764706, g: 0.9019608, b: 0.78431374, a: 1}
+  streakSunInDuration: 0.45
   streakCountDelay: 0.35
   streakPopDuration: 0.3
   streakPopScale: 0.35
   streakAccentColor: {r: 1, g: 0.5882353, b: 0, a: 1}
-  streakFlameCoreColor: {r: 1, g: 0.78431374, b: 0, a: 1}
+  streakSunCoreColor: {r: 1, g: 0.87058824, b: 0.23921569, a: 1}
   streakPendingDayColor: {r: 0.8980392, g: 0.8666667, b: 0.84705883, a: 1}

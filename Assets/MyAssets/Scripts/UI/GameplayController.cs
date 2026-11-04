@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using VibeCodeTest.Data;
@@ -15,6 +17,9 @@ namespace VibeCodeTest.UI
 
         [SerializeField]
         private GameConfig config;
+
+        private RectTransform hudRect;
+        private RectTransform boardArea;
 
         public GameConfig Config => config;
 
@@ -43,33 +48,64 @@ namespace VibeCodeTest.UI
             StartLevel(0);
         }
 
+        // The Canvas resizes with the screen, including when a phone rotates.
+        private void OnRectTransformDimensionsChange()
+        {
+            if (hudRect != null)
+            {
+                ApplyLayout();
+            }
+        }
+
         private void BuildScreen()
         {
             var root = (RectTransform)transform;
-            float hudBottom = config.HudTopMargin + config.HudHeight;
 
             RectTransform background = UiFactory.CreateRect("Background", root);
             UiFactory.Stretch(background);
             UiFactory.AddImage(background, config.BackgroundColor);
             background.SetAsFirstSibling();
 
-            RectTransform hud = UiFactory.CreateRect("HUD", root);
-            hud.anchorMin = new Vector2(0f, 1f);
-            hud.anchorMax = Vector2.one;
-            hud.offsetMin = new Vector2(config.SideMargin, -hudBottom);
-            hud.offsetMax = new Vector2(-config.SideMargin, -config.HudTopMargin);
-            Hud = HudView.Create(hud, config);
+            hudRect = UiFactory.CreateRect("HUD", root);
+            Hud = HudView.Create(hudRect, config);
+            Hud.BackButton.onClick.AddListener(() => SceneManager.LoadScene(MainMenuBuildIndex));
 
-            RectTransform boardArea = UiFactory.CreateRect("Board Area", root);
-            boardArea.anchorMin = Vector2.zero;
-            boardArea.anchorMax = Vector2.one;
-            boardArea.offsetMin = new Vector2(config.SideMargin, config.BoardBottomMargin);
-            boardArea.offsetMax = new Vector2(-config.SideMargin, -hudBottom);
+            boardArea = UiFactory.CreateRect("Board Area", root);
             Grid = GridView.Create(boardArea, config);
             Grid.CellTapped += OnCellTapped;
 
             Result = ResultPanel.Create(root, config);
             Streak = StreakView.Create(root, config);
+            ApplyLayout();
+        }
+
+        /// <summary>Portrait stacks the HUD over the board. Landscape puts them side by side, so the board stays large.</summary>
+        private void ApplyLayout()
+        {
+            Rect canvas = ((RectTransform)transform).rect;
+            float margin = config.SideMargin;
+            float top = config.HudTopMargin;
+            float bottom = config.BoardBottomMargin;
+
+            if (canvas.width > canvas.height)
+            {
+                SetRect(hudRect, Vector2.zero, new Vector2(0.5f, 1f), new Vector2(margin, bottom), new Vector2(-margin / 2f, -top));
+                SetRect(boardArea, new Vector2(0.5f, 0f), Vector2.one, new Vector2(margin / 2f, bottom), new Vector2(-margin, -top));
+            }
+            else
+            {
+                float hudBottom = top + config.HudHeight;
+                SetRect(hudRect, new Vector2(0f, 1f), Vector2.one, new Vector2(margin, -hudBottom), new Vector2(-margin, -top));
+                SetRect(boardArea, Vector2.zero, Vector2.one, new Vector2(margin, bottom), new Vector2(-margin, -(hudBottom + margin)));
+            }
+        }
+
+        private static void SetRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = offsetMin;
+            rect.offsetMax = offsetMax;
         }
 
         private void StartLevel(int levelIndex)
@@ -89,12 +125,18 @@ namespace VibeCodeTest.UI
 
             if (Game.Status == PuzzleStatus.Won)
             {
-                ShowLevelWon();
+                StartCoroutine(AfterResultDelay(ShowLevelWon));
             }
             else if (Game.Status == PuzzleStatus.Lost)
             {
-                Result.Show("Out of lives", "Retry", () => StartLevel(LevelIndex));
+                StartCoroutine(AfterResultDelay(() => Result.Show("Out of lives", "Retry", () => StartLevel(LevelIndex))));
             }
+        }
+
+        private IEnumerator AfterResultDelay(Action show)
+        {
+            yield return new WaitForSecondsRealtime(config.ResultPanelDelay);
+            show();
         }
 
         private void ShowLevelWon()

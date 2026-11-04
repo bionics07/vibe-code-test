@@ -26,25 +26,93 @@ namespace VibeCodeTest.Data
         [SerializeField, Min(0f)]
         private float boardPaddingRatio = 0.22f;
 
-        [SerializeField, Range(0f, 0.4f)]
-        private float iconInsetRatio = 0.06f;
+        [SerializeField, Tooltip("Space around the X inside its cell, as a ratio of the cell.")]
+        private float markInsetRatio = 0.14f;
 
-        [Header("Screen margins, in canvas units")]
+        [SerializeField, Tooltip("Space around the cat inside its cell. Negative lets it spill over, as in the reference.")]
+        private float catInsetRatio = -0.05f;
+
+        [Header("Corner radii, in canvas units")]
+        [SerializeField, Min(1f)]
+        private float cellCornerRadius = 16f;
+
+        [SerializeField, Min(1f)]
+        private float panelCornerRadius = 36f;
+
+        [SerializeField, Min(1f)]
+        private float pillCornerRadius = 80f;
+
+        [Header("Animations, in seconds")]
+        [SerializeField, Min(0.01f)]
+        private float popInDuration = 0.25f;
+
+        [SerializeField, Min(0.01f)]
+        private float mistakeShakeDuration = 0.35f;
+
+        [SerializeField, Tooltip("Largest sideways move of the shake, in canvas units.")]
+        private float mistakeShakeDistance = 14f;
+
+        [SerializeField, Min(1f)]
+        private float mistakeShakeOscillations = 3f;
+
+        [SerializeField, Min(0.01f)]
+        private float catCounterPunchDuration = 0.3f;
+
+        [SerializeField, Min(0f), Tooltip("Extra scale at the peak of the punch on the cat counter.")]
+        private float catCounterPunchScale = 0.3f;
+
+        [SerializeField, Min(0f), Tooltip("Wait before the result panel, so the last move stays visible.")]
+        private float resultPanelDelay = 0.7f;
+
+        [Header("Screen margins and HUD, in canvas units")]
         [SerializeField]
         private float sideMargin = 40f;
 
         [SerializeField]
-        private float hudTopMargin = 40f;
+        private float hudTopMargin = 30f;
 
         [SerializeField]
-        private float hudHeight = 140f;
+        private float hudHeight = 500f;
 
         [SerializeField]
-        private float boardBottomMargin = 240f;
+        private float boardBottomMargin = 60f;
+
+        [SerializeField]
+        private float backButtonSize = 120f;
+
+        [SerializeField]
+        private float hudTitleRowHeight = 170f;
+
+        [SerializeField]
+        private float hudPillRowTop = 185f;
+
+        [SerializeField]
+        private float hudPillRowHeight = 110f;
+
+        [SerializeField]
+        private float hudRulesTop = 310f;
+
+        [SerializeField]
+        private float hudRulesHeight = 190f;
 
         [Header("Text and panels")]
         [SerializeField]
-        private int hudFontSize = 54;
+        private string levelCaption = "Level";
+
+        [SerializeField, Tooltip("One text per rule card, in order: color, column and row, touching.")]
+        private string[] ruleTexts = { "1 Cat per color", "1 Cat per column and row", "Cats cannot touch" };
+
+        [SerializeField]
+        private int hudCaptionFontSize = 52;
+
+        [SerializeField]
+        private int hudNumberFontSize = 60;
+
+        [SerializeField]
+        private int hudCounterFontSize = 58;
+
+        [SerializeField]
+        private int ruleFontSize = 32;
 
         [SerializeField]
         private int resultTitleFontSize = 64;
@@ -78,6 +146,30 @@ namespace VibeCodeTest.Data
         private Color resultButtonColor = new Color32(0x8F, 0xD9, 0x7E, 0xFF);
 
         [SerializeField]
+        private Color cardColor = Color.white;
+
+        [SerializeField]
+        private Color ruleCardColor = new Color32(0xF8, 0xF1, 0xEC, 0xFF);
+
+        [SerializeField]
+        private Color ruleCellColor = new Color32(0xA6, 0x6E, 0x4B, 0xFF);
+
+        [SerializeField]
+        private Color ruleEmptyCellColor = new Color32(0xE3, 0xCD, 0xBB, 0xFF);
+
+        [SerializeField]
+        private Color catCountColor = new Color32(0x2F, 0xB3, 0x44, 0xFF);
+
+        [SerializeField]
+        private Color lifeColor = new Color32(0xFF, 0x8A, 0x3C, 0xFF);
+
+        [SerializeField]
+        private Color lifeLostColor = new Color32(0xF7, 0xDE, 0xD0, 0xFF);
+
+        [SerializeField]
+        private Color softShadowColor = new Color(0f, 0f, 0f, 0.08f);
+
+        [SerializeField]
         private List<RegionColorEntry> regionColors = new List<RegionColorEntry>();
 
         [Header("Fake streak")]
@@ -85,25 +177,43 @@ namespace VibeCodeTest.Data
         private int streakLevelIndex;
 
         [SerializeField]
-        private string streakTitle = "day streak!";
+        private string streakScreenTitle = "Daily Streak";
+
+        [SerializeField]
+        private string streakCurrentLabel = "Current Streak";
+
+        [SerializeField, Tooltip("{0} is the best streak.")]
+        private string streakBestFormat = "Best Streak: {0}";
 
         [SerializeField]
         private string streakContinueLabel = "Continue";
 
-        [SerializeField, Tooltip("One letter per day, starting on Sunday.")]
-        private string streakWeekLetters = "SMTWTFS";
+        [SerializeField, Tooltip("Exactly seven labels, starting on Sunday.")]
+        private string[] streakWeekLabels = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
+
+        [SerializeField]
+        private int streakScreenTitleFontSize = 56;
 
         [SerializeField]
         private int streakNumberFontSize = 220;
 
         [SerializeField]
-        private int streakTitleFontSize = 84;
+        private int streakCurrentFontSize = 72;
 
         [SerializeField]
-        private int streakWeekFontSize = 44;
+        private int streakBestFontSize = 48;
+
+        [SerializeField]
+        private int streakWeekFontSize = 38;
+
+        [SerializeField]
+        private Color streakBackgroundColor = new Color32(0xFB, 0xF1, 0xDF, 0xFF);
+
+        [SerializeField]
+        private Color streakHeaderColor = new Color32(0xF9, 0xE6, 0xC8, 0xFF);
 
         [SerializeField, Min(0.01f)]
-        private float streakFlameInDuration = 0.45f;
+        private float streakSunInDuration = 0.45f;
 
         [SerializeField, Min(0f)]
         private float streakCountDelay = 0.35f;
@@ -118,28 +228,104 @@ namespace VibeCodeTest.Data
         private Color streakAccentColor = new Color32(0xFF, 0x96, 0x00, 0xFF);
 
         [SerializeField]
-        private Color streakFlameCoreColor = new Color32(0xFF, 0xC8, 0x00, 0xFF);
+        private Color streakSunCoreColor = new Color32(0xFF, 0xDE, 0x3D, 0xFF);
 
         [SerializeField]
-        private Color streakPendingDayColor = new Color32(0xE5, 0xDD, 0xD8, 0xFF);
+        private Color streakPendingDayColor = new Color32(0xE2, 0xD6, 0xC2, 0xFF);
 
         public int StartingLives => startingLives;
 
+        public float MarkInsetRatio => markInsetRatio;
+
+        public float CatInsetRatio => catInsetRatio;
+
+        public float CellCornerRadius => cellCornerRadius;
+
+        public float PanelCornerRadius => panelCornerRadius;
+
+        public float PillCornerRadius => pillCornerRadius;
+
+        public float PopInDuration => popInDuration;
+
+        public float MistakeShakeDuration => mistakeShakeDuration;
+
+        public float MistakeShakeDistance => mistakeShakeDistance;
+
+        public float MistakeShakeOscillations => mistakeShakeOscillations;
+
+        public float CatCounterPunchDuration => catCounterPunchDuration;
+
+        public float CatCounterPunchScale => catCounterPunchScale;
+
+        public float ResultPanelDelay => resultPanelDelay;
+
+        public float BackButtonSize => backButtonSize;
+
+        public float HudTitleRowHeight => hudTitleRowHeight;
+
+        public float HudPillRowTop => hudPillRowTop;
+
+        public float HudPillRowHeight => hudPillRowHeight;
+
+        public float HudRulesTop => hudRulesTop;
+
+        public float HudRulesHeight => hudRulesHeight;
+
+        public string LevelCaption => levelCaption;
+
+        public IReadOnlyList<string> RuleTexts => ruleTexts;
+
+        public int HudCaptionFontSize => hudCaptionFontSize;
+
+        public int HudNumberFontSize => hudNumberFontSize;
+
+        public int HudCounterFontSize => hudCounterFontSize;
+
+        public int RuleFontSize => ruleFontSize;
+
+        public Color CardColor => cardColor;
+
+        public Color RuleCardColor => ruleCardColor;
+
+        public Color RuleCellColor => ruleCellColor;
+
+        public Color RuleEmptyCellColor => ruleEmptyCellColor;
+
+        public Color CatCountColor => catCountColor;
+
+        public Color LifeColor => lifeColor;
+
+        public Color LifeLostColor => lifeLostColor;
+
+        public Color SoftShadowColor => softShadowColor;
+
         public int StreakLevelIndex => streakLevelIndex;
 
-        public string StreakTitle => streakTitle;
+        public string StreakScreenTitle => streakScreenTitle;
+
+        public string StreakCurrentLabel => streakCurrentLabel;
+
+        public string StreakBestFormat => streakBestFormat;
 
         public string StreakContinueLabel => streakContinueLabel;
 
-        public string StreakWeekLetters => streakWeekLetters;
+        public IReadOnlyList<string> StreakWeekLabels => streakWeekLabels;
+
+        public int StreakScreenTitleFontSize => streakScreenTitleFontSize;
 
         public int StreakNumberFontSize => streakNumberFontSize;
 
-        public int StreakTitleFontSize => streakTitleFontSize;
+        public int StreakCurrentFontSize => streakCurrentFontSize;
+
+        public int StreakBestFontSize => streakBestFontSize;
 
         public int StreakWeekFontSize => streakWeekFontSize;
 
-        public float StreakFlameInDuration => streakFlameInDuration;
+        public Color StreakBackgroundColor => streakBackgroundColor;
+
+        public Color StreakHeaderColor => streakHeaderColor;
+
+        public float StreakSunInDuration => streakSunInDuration;
 
         public float StreakCountDelay => streakCountDelay;
 
@@ -149,7 +335,7 @@ namespace VibeCodeTest.Data
 
         public Color StreakAccentColor => streakAccentColor;
 
-        public Color StreakFlameCoreColor => streakFlameCoreColor;
+        public Color StreakSunCoreColor => streakSunCoreColor;
 
         public Color StreakPendingDayColor => streakPendingDayColor;
 
@@ -161,8 +347,6 @@ namespace VibeCodeTest.Data
 
         public float BoardPaddingRatio => boardPaddingRatio;
 
-        public float IconInsetRatio => iconInsetRatio;
-
         public float SideMargin => sideMargin;
 
         public float HudTopMargin => hudTopMargin;
@@ -170,8 +354,6 @@ namespace VibeCodeTest.Data
         public float HudHeight => hudHeight;
 
         public float BoardBottomMargin => boardBottomMargin;
-
-        public int HudFontSize => hudFontSize;
 
         public int ResultTitleFontSize => resultTitleFontSize;
 

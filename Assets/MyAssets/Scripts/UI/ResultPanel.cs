@@ -26,19 +26,20 @@ namespace VibeCodeTest.UI
             RectTransform panel = UiFactory.CreateRect("Panel", root);
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.sizeDelta = config.ResultPanelSize;
-            UiFactory.AddImage(panel, config.BackgroundColor);
+            UiFactory.AddRounded(panel, config.BackgroundColor, config.PanelCornerRadius);
 
             RectTransform title = UiFactory.CreateRect("Title", panel);
             UiFactory.Anchor(title, new Vector2(0f, 0.45f), Vector2.one, 30f);
-            view.Title = UiFactory.AddText(title, string.Empty, config.ResultTitleFontSize, config.InkColor);
+            view.Title = UiFactory.AddFittedText(title, string.Empty, config.ResultTitleFontSize, config.InkColor);
 
             RectTransform button = UiFactory.CreateRect("Action Button", panel);
             UiFactory.Anchor(button, new Vector2(0.2f, 0.1f), new Vector2(0.8f, 0.42f));
-            view.ActionButton = UiFactory.AddButton(button, UiFactory.AddImage(button, config.ResultButtonColor));
+            Image background = UiFactory.AddRounded(button, config.ResultButtonColor, config.PillCornerRadius);
+            view.ActionButton = UiFactory.AddButton(button, background);
 
             RectTransform label = UiFactory.CreateRect("Label", button);
             UiFactory.Stretch(label);
-            view.ActionLabel = UiFactory.AddText(label, string.Empty, config.ResultButtonFontSize, Color.white);
+            view.ActionLabel = UiFactory.AddFittedText(label, string.Empty, config.ResultButtonFontSize, Color.white);
 
             view.Hide();
             return view;

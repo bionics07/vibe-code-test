@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,6 +23,7 @@ namespace VibeCodeTest.Tests
         private const int GameplayBuildIndex = 2;
         private const int MainMenuBuildIndex = 1;
         private const int MaxWaitFrames = 60;
+        private const float SettleMargin = 0.15f;
 
         private static readonly Vector2Int[] ScreenSizes =
         {
@@ -57,89 +59,6 @@ namespace VibeCodeTest.Tests
             Assert.IsNotNull(controller.Config, "The GameplayController needs a GameConfig.");
         }
 
-        [UnityTest]
-        public IEnumerator FirstWinOfLevelOne_ShowsTheStreak_ThenLevelTwo()
-        {
-            Assert.IsFalse(controller.Streak.IsVisible);
-            SolveCurrentLevel();
-            Assert.IsFalse(controller.Streak.IsVisible, "The result panel comes first.");
-
-            controller.Result.ActionButton.onClick.Invoke();
-            yield return null;
-
-            Assert.IsTrue(controller.Streak.IsVisible);
-            Assert.IsFalse(controller.Result.IsVisible);
-            Assert.AreEqual(0, controller.LevelIndex);
-            Assert.AreEqual(Config.StreakTitle, controller.Streak.TitleLabel.text);
-
-            controller.Streak.ContinueButton.onClick.Invoke();
-            yield return null;
-
-            Assert.IsFalse(controller.Streak.IsVisible);
-            Assert.AreEqual(1, controller.LevelIndex);
-        }
-
-        [UnityTest]
-        public IEnumerator Streak_CountsFromZeroToOneAndChecksToday()
-        {
-            yield return OpenStreakScreen();
-
-            Assert.AreEqual("0", controller.Streak.NumberLabel.text);
-            Assert.IsFalse(controller.Streak.TodayCheck.enabled);
-
-            float total = Config.StreakFlameInDuration + Config.StreakCountDelay + Config.StreakPopDuration;
-            yield return new WaitForSecondsRealtime(total + 0.2f);
-
-            Assert.AreEqual("1", controller.Streak.NumberLabel.text);
-            Assert.IsTrue(controller.Streak.TodayCheck.enabled);
-            Assert.AreEqual(1f, controller.Streak.Flame.localScale.x, 0.001f);
-            Assert.AreEqual(1f, controller.Streak.NumberLabel.rectTransform.localScale.x, 0.001f);
-        }
-
-        [UnityTest]
-        public IEnumerator Streak_AppearsOnlyOnce_EvenAfterLeavingTheScene()
-        {
-            yield return OpenStreakScreen();
-            controller.Streak.ContinueButton.onClick.Invoke();
-            yield return LoadGameplayScene();
-
-            Assert.AreEqual(0, controller.LevelIndex);
-            SolveCurrentLevel();
-            controller.Result.ActionButton.onClick.Invoke();
-            yield return null;
-
-            Assert.IsFalse(controller.Streak.IsVisible);
-            Assert.AreEqual(1, controller.LevelIndex);
-        }
-
-        [UnityTest]
-        public IEnumerator LosingLevelOne_DoesNotShowTheStreak()
-        {
-            foreach (int col in WrongColumns(0))
-            {
-                Tap(0, col);
-                Tap(0, col);
-            }
-
-            controller.Result.ActionButton.onClick.Invoke();
-            yield return null;
-
-            Assert.IsFalse(controller.Streak.IsVisible);
-            Assert.AreEqual(0, controller.LevelIndex);
-        }
-
-        [UnityTest]
-        public IEnumerator RealMouseClickOnContinue_LeavesTheStreak()
-        {
-            yield return OpenStreakScreen();
-            yield return null;
-
-            yield return ClickWithMouse(CenterOf((RectTransform)controller.Streak.ContinueButton.transform));
-
-            Assert.IsFalse(controller.Streak.IsVisible);
-            Assert.AreEqual(1, controller.LevelIndex);
-        }
-
         [Test]
         public void Scene_StartsOnLevelOneWithTheStarterCatCounted()
         {
@@ -147,11 +66,33 @@ namespace VibeCodeTest.Tests
 
             Assert.AreEqual(0, controller.LevelIndex);
             Assert.AreEqual(4, controller.Grid.Size);
-            Assert.AreEqual("Level 1", controller.Hud.LevelLabel.text);
-            Assert.AreEqual("Cats 1/4", controller.Hud.CatsLabel.text);
-            Assert.AreEqual("Lives 3/3", controller.Hud.LivesLabel.text);
+            Assert.AreEqual("1", controller.Hud.LevelNumberLabel.text);
+            Assert.AreEqual("1/4", ShownCats());
+            Assert.AreEqual(3, ShownLives());
             Assert.AreEqual(GameSprites.Cat, controller.Grid.IconAt(starter.y, starter.x).sprite);
             Assert.IsFalse(controller.Result.IsVisible);
+        }
+
+        [Test]
+        public void Hud_ExplainsEveryRule()
+        {
+            string[] texts = controller.Hud.Rules.GetComponentsInChildren<Text>().Select(text => text.text).ToArray();
+
+            CollectionAssert.AreEqual(Config.RuleTexts, texts);
+        }
+
+        [UnityTest]
+        public IEnumerator BackButton_LeadsToTheMenu()
+        {
+            yield return null;
+
+            yield return ClickWithMouse(CenterOf((RectTransform)controller.Hud.BackButton.transform));
+            for (int frame = 0; frame < MaxWaitFrames && SceneManager.GetActiveScene().buildIndex != MainMenuBuildIndex; frame++)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(MainMenuBuildIndex, SceneManager.GetActiveScene().buildIndex);
         }
 
         [Test]
@@ -179,6 +120,62 @@ namespace VibeCodeTest.Tests
             Assert.AreEqual(Config.MarkColor, icon.color);
         }
 
+        [UnityTest]
+        public IEnumerator Mark_PopsInAndSettlesAtFullSize()
+        {
+            Tap(0, 0);
+            Transform icon = controller.Grid.IconAt(0, 0).transform;
+            Assert.Less(icon.localScale.x, 0.5f, "The pop must start small.");
+
+            yield return new WaitForSecondsRealtime(Config.PopInDuration + SettleMargin);
+
+            Assert.AreEqual(1f, icon.localScale.x, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Cat_PopsInAndPunchesTheCounter()
+        {
+            int col = SolutionFor(controller.Game.Level)[0];
+
+            Tap(0, col);
+            Tap(0, col);
+            Transform icon = controller.Grid.IconAt(0, col).transform;
+            Assert.AreEqual(GameSprites.Cat, controller.Grid.IconAt(0, col).sprite);
+            Assert.Less(icon.localScale.x, 0.5f, "The pop must start small.");
+
+            yield return new WaitForSecondsRealtime(Config.CatCounterPunchDuration / 2f);
+            Assert.Greater(controller.Hud.CatIcon.localScale.x, 1f, "The counter must punch while growing.");
+
+            yield return new WaitForSecondsRealtime((Config.CatCounterPunchDuration / 2f) + SettleMargin);
+            Assert.AreEqual(1f, icon.localScale.x, 0.001f);
+            Assert.AreEqual(1f, controller.Hud.CatIcon.localScale.x, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Mistake_ShakesTheCellAndReturnsToRest()
+        {
+            int col = WrongColumns(0).First();
+            var cell = (RectTransform)controller.Grid.ButtonAt(0, col).transform;
+
+            Tap(0, col);
+            Tap(0, col);
+
+            float largest = 0f;
+            float elapsed = 0f;
+            while (elapsed < Config.MistakeShakeDuration)
+            {
+                yield return null;
+                elapsed += Time.unscaledDeltaTime;
+                largest = Mathf.Max(largest, Mathf.Abs(cell.anchoredPosition.x));
+            }
+
+            yield return new WaitForSecondsRealtime(SettleMargin);
+
+            Assert.Greater(largest, 0f, "The cell must move.");
+            Assert.LessOrEqual(largest, Config.MistakeShakeDistance);
+            Assert.AreEqual(Vector2.zero, cell.anchoredPosition);
+        }
+
         [Test]
         public void TapTwiceOnSolution_ShowsCatAndCountsIt()
         {
@@ -188,7 +185,7 @@ namespace VibeCodeTest.Tests
             Tap(0, col);
 
             Assert.AreEqual(GameSprites.Cat, controller.Grid.IconAt(0, col).sprite);
-            Assert.AreEqual("Cats 2/4", controller.Hud.CatsLabel.text);
+            Assert.AreEqual("2/4", ShownCats());
         }
 
         [Test]
@@ -202,7 +199,7 @@ namespace VibeCodeTest.Tests
             Image icon = controller.Grid.IconAt(0, col);
             Assert.AreEqual(GameSprites.Mark, icon.sprite);
             Assert.AreEqual(Config.MistakeColor, icon.color);
-            Assert.AreEqual("Lives 2/3", controller.Hud.LivesLabel.text);
+            Assert.AreEqual(2, ShownLives());
         }
 
         [UnityTest]
@@ -215,8 +212,8 @@ namespace VibeCodeTest.Tests
             Tap(0, col);
 
             Assert.IsFalse(controller.Grid.IconAt(0, col).enabled);
-            Assert.AreEqual("Cats 1/4", controller.Hud.CatsLabel.text);
-            Assert.AreEqual("Lives 3/3", controller.Hud.LivesLabel.text);
+            Assert.AreEqual("1/4", ShownCats());
+            Assert.AreEqual(3, ShownLives());
         }
 
         [UnityTest]
@@ -250,13 +247,8 @@ namespace VibeCodeTest.Tests
         [UnityTest]
         public IEnumerator ThreeMistakes_ShowRetry_WhichRestartsTheSameLevelWithItsStarter()
         {
-            foreach (int col in WrongColumns(0))
-            {
-                Tap(0, col);
-                Tap(0, col);
-            }
+            yield return LoseCurrentLevel();
 
-            Assert.IsTrue(controller.Result.IsVisible);
             Assert.AreEqual("Retry", controller.Result.ActionLabel.text);
 
             controller.Result.ActionButton.onClick.Invoke();
@@ -265,10 +257,21 @@ namespace VibeCodeTest.Tests
             Vector2Int starter = Config.Levels[0].StarterCat;
             Assert.IsFalse(controller.Result.IsVisible);
             Assert.AreEqual(0, controller.LevelIndex);
-            Assert.AreEqual("Lives 3/3", controller.Hud.LivesLabel.text);
-            Assert.AreEqual("Cats 1/4", controller.Hud.CatsLabel.text);
+            Assert.AreEqual(3, ShownLives());
+            Assert.AreEqual("1/4", ShownCats());
             Assert.IsFalse(controller.Grid.IconAt(0, WrongColumns(0).First()).enabled);
             Assert.IsTrue(controller.Grid.IconAt(starter.y, starter.x).enabled);
+        }
+
+        [UnityTest]
+        public IEnumerator ResultPanel_WaitsSoTheLastMoveStaysVisible()
+        {
+            SolveCurrentLevel();
+            yield return null;
+
+            Assert.IsFalse(controller.Result.IsVisible);
+
+            yield return WaitForResultPanel();
         }
 
         [UnityTest]
@@ -279,7 +282,7 @@ namespace VibeCodeTest.Tests
                 Assert.AreEqual(index, controller.LevelIndex);
                 Assert.AreEqual(Config.Levels[index].GridSize, controller.Grid.Size);
                 SolveCurrentLevel();
-                Assert.IsTrue(controller.Result.IsVisible);
+                yield return WaitForResultPanel();
 
                 bool isLast = index == Config.Levels.Count - 1;
                 Assert.AreEqual(isLast ? "Menu" : "Next", controller.Result.ActionLabel.text);
@@ -319,6 +322,7 @@ namespace VibeCodeTest.Tests
                 if (index < Config.Levels.Count - 1)
                 {
                     SolveCurrentLevel();
+                    yield return WaitForResultPanel();
                     controller.Result.ActionButton.onClick.Invoke();
                     ContinuePastStreak();
                 }
@@ -333,9 +337,105 @@ namespace VibeCodeTest.Tests
             Assert.AreEqual(controller.Grid.ButtonAt(1, 1).gameObject, TopRaycastAt(cell));
 
             SolveCurrentLevel();
+            yield return WaitForResultPanel();
             yield return null;
 
-            Assert.AreEqual(controller.Result.gameObject, TopRaycastAt(cell));
+            Assert.IsTrue(TopRaycastAt(cell).transform.IsChildOf(controller.Result.transform), "The panel must block the cell.");
+        }
+
+        [UnityTest]
+        public IEnumerator FirstWinOfLevelOne_ShowsTheStreak_ThenLevelTwo()
+        {
+            Assert.IsFalse(controller.Streak.IsVisible);
+            SolveCurrentLevel();
+            yield return WaitForResultPanel();
+            Assert.IsFalse(controller.Streak.IsVisible, "The result panel comes first.");
+
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsTrue(controller.Streak.IsVisible);
+            Assert.IsFalse(controller.Result.IsVisible);
+            Assert.AreEqual(0, controller.LevelIndex);
+
+            controller.Streak.ContinueButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator Streak_ShowsTheReferenceTextsTodayFirstAndARewardLast()
+        {
+            yield return OpenStreakScreen();
+
+            StreakView streak = controller.Streak;
+            string today = Config.StreakWeekLabels[(int)System.DateTime.Today.DayOfWeek];
+            Assert.AreEqual(Config.StreakScreenTitle, streak.TitleLabel.text);
+            Assert.AreEqual(Config.StreakCurrentLabel, streak.CurrentLabel.text);
+            Assert.AreEqual(string.Format(Config.StreakBestFormat, 1), streak.BestLabel.text);
+            Assert.AreEqual(today, streak.TodayLabel.text);
+            Assert.AreEqual(GameSprites.Gift, streak.RewardIcon.sprite);
+            Assert.AreEqual(Config.StreakWeekLabels.Count, streak.WeekRow.childCount);
+        }
+
+        [UnityTest]
+        public IEnumerator Streak_CountsFromZeroToOneAndChecksToday()
+        {
+            yield return OpenStreakScreen();
+
+            Assert.AreEqual("0", controller.Streak.NumberLabel.text);
+            Assert.IsFalse(controller.Streak.TodayCheck.enabled);
+
+            float total = Config.StreakSunInDuration + Config.StreakCountDelay + Config.StreakPopDuration;
+            yield return new WaitForSecondsRealtime(total + 0.2f);
+
+            Assert.AreEqual("1", controller.Streak.NumberLabel.text);
+            Assert.IsTrue(controller.Streak.TodayCheck.enabled);
+            Assert.AreEqual(1f, controller.Streak.Sun.localScale.x, 0.001f);
+            Assert.AreEqual(1f, controller.Streak.NumberLabel.rectTransform.localScale.x, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Streak_AppearsOnlyOnce_EvenAfterLeavingTheScene()
+        {
+            yield return OpenStreakScreen();
+            controller.Streak.ContinueButton.onClick.Invoke();
+            yield return LoadGameplayScene();
+
+            Assert.AreEqual(0, controller.LevelIndex);
+            SolveCurrentLevel();
+            yield return WaitForResultPanel();
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator LosingLevelOne_DoesNotShowTheStreak()
+        {
+            yield return LoseCurrentLevel();
+
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(0, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator RealMouseClickOnContinue_LeavesTheStreak()
+        {
+            yield return OpenStreakScreen();
+            yield return null;
+
+            yield return ClickWithMouse(CenterOf((RectTransform)controller.Streak.ContinueButton.transform));
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
         }
 
 #if UNITY_EDITOR
@@ -378,32 +478,60 @@ namespace VibeCodeTest.Tests
             }
         }
 
+        private void AssertLayoutFits()
+        {
+            HudView hud = controller.Hud;
+            Rect board = ScreenRect(controller.Grid.Board);
+            Assert.AreEqual(board.width, board.height, 1f, "Board must stay square.");
+            AssertInside(board, ScreenRect((RectTransform)controller.Grid.ButtonAt(3, 3).transform), "Last cell");
+
+            AssertAllFitWithoutOverlap(
+                ("Board", board),
+                ("Back", ScreenRect((RectTransform)hud.BackButton.transform)),
+                ("Cats", ScreenRect(hud.CatCounter)),
+                ("Lives", ScreenRect(hud.Lives)),
+                ("Rules", ScreenRect(hud.Rules)));
+        }
+
         private void AssertStreakFits()
         {
-            var screen = new Rect(0f, 0f, Screen.width, Screen.height);
             StreakView streak = controller.Streak;
-            Rect flame = UnscaledBand(streak.Flame);
-            Rect[] bands =
-            {
-                flame,
-                ScreenRect(streak.NumberLabel.rectTransform),
-                ScreenRect(streak.TitleLabel.rectTransform),
-                ScreenRect(streak.WeekRow),
-                ScreenRect((RectTransform)streak.ContinueButton.transform),
-            };
+            AssertAllFitWithoutOverlap(
+                ("Header", ScreenRect(streak.HeaderBar)),
+                ("Sun", UnscaledRect(streak.Sun)),
+                ("Number", UnscaledRect(streak.NumberLabel.rectTransform)),
+                ("Current", ScreenRect(streak.CurrentLabel.rectTransform)),
+                ("Best", ScreenRect(streak.BestPill)),
+                ("Week", ScreenRect(streak.WeekRow)),
+                ("Continue", ScreenRect((RectTransform)streak.ContinueButton.transform)));
+        }
 
-            for (int i = 0; i < bands.Length; i++)
+        private static void AssertAllFitWithoutOverlap(params (string name, Rect rect)[] items)
+        {
+            var screen = new Rect(0f, 0f, Screen.width, Screen.height);
+            for (int i = 0; i < items.Length; i++)
             {
-                AssertInside(screen, bands[i], $"Streak band {i}");
-                for (int j = i + 1; j < bands.Length; j++)
+                AssertInside(screen, items[i].rect, items[i].name);
+                for (int j = i + 1; j < items.Length; j++)
                 {
-                    Assert.IsFalse(Shrunk(bands[i]).Overlaps(Shrunk(bands[j])), $"Streak bands {i} and {j} overlap: {bands[i]}, {bands[j]}.");
+                    Assert.IsFalse(
+                        Shrunk(items[i].rect).Overlaps(Shrunk(items[j].rect)),
+                        $"{items[i].name} {items[i].rect} overlaps {items[j].name} {items[j].rect}.");
                 }
             }
         }
 
-        // The flame may be mid-animation; its layout rect is what must fit.
-        private static Rect UnscaledBand(RectTransform rect)
+        private static void AssertInside(Rect outer, Rect inner, string label)
+        {
+            const float tolerance = 1f;
+            Assert.IsTrue(
+                inner.xMin >= outer.xMin - tolerance && inner.xMax <= outer.xMax + tolerance &&
+                inner.yMin >= outer.yMin - tolerance && inner.yMax <= outer.yMax + tolerance,
+                $"{label} {inner} leaves {outer}.");
+        }
+
+        // Animated elements may be mid-scale; their layout rect is what must fit.
+        private static Rect UnscaledRect(RectTransform rect)
         {
             Vector3 scale = rect.localScale;
             rect.localScale = Vector3.one;
@@ -417,32 +545,17 @@ namespace VibeCodeTest.Tests
             const float tolerance = 0.5f;
             return Rect.MinMaxRect(rect.xMin + tolerance, rect.yMin + tolerance, rect.xMax - tolerance, rect.yMax - tolerance);
         }
-
-        private void AssertLayoutFits()
-        {
-            Rect screen = new Rect(0f, 0f, Screen.width, Screen.height);
-            Rect board = ScreenRect(controller.Grid.Board);
-            Rect hud = ScreenRect((RectTransform)controller.Hud.transform);
-            Rect back = ScreenRect((RectTransform)GameObject.Find("Back Button").transform);
-
-            AssertInside(screen, board, "Board");
-            AssertInside(screen, hud, "HUD");
-            AssertInside(screen, back, "Back Button");
-            Assert.IsFalse(board.Overlaps(hud), $"Board {board} overlaps HUD {hud}.");
-            Assert.IsFalse(board.Overlaps(back), $"Board {board} overlaps Back {back}.");
-            Assert.AreEqual(board.width, board.height, 1f, "Board must stay square.");
-            AssertInside(board, ScreenRect((RectTransform)controller.Grid.ButtonAt(3, 3).transform), "Last cell");
-        }
-
-        private static void AssertInside(Rect outer, Rect inner, string label)
-        {
-            const float tolerance = 1f;
-            Assert.IsTrue(
-                inner.xMin >= outer.xMin - tolerance && inner.xMax <= outer.xMax + tolerance &&
-                inner.yMin >= outer.yMin - tolerance && inner.yMax <= outer.yMax + tolerance,
-                $"{label} {inner} leaves {outer}.");
-        }
 #endif
+
+        private string ShownCats()
+        {
+            return Regex.Replace(controller.Hud.CatsLabel.text, "<.*?>", string.Empty);
+        }
+
+        private int ShownLives()
+        {
+            return controller.Hud.LifeIcons.Count(icon => icon.color == Config.LifeColor);
+        }
 
         private static Rect ScreenRect(RectTransform rect)
         {
@@ -458,6 +571,17 @@ namespace VibeCodeTest.Tests
             {
                 Assert.Inconclusive("No mouse device to drive.");
             }
+
+            if (!Application.isFocused)
+            {
+                Assert.Inconclusive("The Editor is not focused, so the Input System drops the mouse events.");
+            }
+
+            // The pointer arrives first, as a real one does, so the UI knows what it is over.
+            SendPointer(mouse, position, mouse.leftButton, false);
+            InputSystem.Update();
+            yield return null;
+            yield return null;
 
             SendPointer(mouse, position, mouse.leftButton, true);
             SendPointer(mouse, position, mouse.leftButton, false);
@@ -482,9 +606,27 @@ namespace VibeCodeTest.Tests
             controller.Grid.ButtonAt(row, col).onClick.Invoke();
         }
 
+        private IEnumerator WaitForResultPanel()
+        {
+            yield return new WaitForSecondsRealtime(Config.ResultPanelDelay + SettleMargin);
+            Assert.IsTrue(controller.Result.IsVisible, "The result panel must appear after its delay.");
+        }
+
+        private IEnumerator LoseCurrentLevel()
+        {
+            foreach (int col in WrongColumns(0))
+            {
+                Tap(0, col);
+                Tap(0, col);
+            }
+
+            yield return WaitForResultPanel();
+        }
+
         private IEnumerator OpenStreakScreen()
         {
             SolveCurrentLevel();
+            yield return WaitForResultPanel();
             controller.Result.ActionButton.onClick.Invoke();
             yield return null;
             Assert.IsTrue(controller.Streak.IsVisible);
