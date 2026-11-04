@@ -14,11 +14,23 @@ namespace VibeCodeTest.UI
 
         private static Sprite mark;
         private static Sprite cat;
+        private static Sprite flame;
+        private static Sprite disc;
+        private static Sprite check;
 
         /// <summary>White X, tinted by the Image that shows it.</summary>
         public static Sprite Mark => mark != null ? mark : mark = Draw(ShadeMark);
 
         public static Sprite Cat => cat != null ? cat : cat = Draw(ShadeCat);
+
+        /// <summary>White flame, tinted by the Image that shows it.</summary>
+        public static Sprite Flame => flame != null ? flame : flame = Draw(ShadeFlame);
+
+        /// <summary>White disc, tinted by the Image that shows it.</summary>
+        public static Sprite Disc => disc != null ? disc : disc = Draw(ShadeDisc);
+
+        /// <summary>White check mark, tinted by the Image that shows it.</summary>
+        public static Sprite Check => check != null ? check : check = Draw(ShadeCheck);
 
         private static Sprite Draw(Func<Vector2, Color> shade)
         {
@@ -93,6 +105,38 @@ namespace VibeCodeTest.UI
             bool head = InEllipse(p, new Vector2(0f, -0.1f), 0.86f, 0.68f);
             bool ear = InTriangle(mirrored, new Vector2(0.28f, 0.45f), new Vector2(0.82f, 0.2f), new Vector2(0.72f, 0.88f));
             return head || ear ? CatFur : Color.clear;
+        }
+
+        private static Color ShadeFlame(Vector2 p)
+        {
+            const float bottom = -0.92f;
+            const float height = 1.86f;
+            const float maxHalfWidth = 0.74f;
+            const float taper = 0.62f;
+            const float lean = 0.16f;
+
+            float t = (p.y - bottom) / height;
+            if (t < 0f || t > 1f)
+            {
+                return Color.clear;
+            }
+
+            float halfWidth = maxHalfWidth * Mathf.Pow(Mathf.Sin(Mathf.PI * Mathf.Pow(t, taper)), 0.8f);
+            return Mathf.Abs(p.x - (lean * t * t)) <= halfWidth ? Color.white : Color.clear;
+        }
+
+        private static Color ShadeDisc(Vector2 p)
+        {
+            return p.sqrMagnitude <= 0.92f ? Color.white : Color.clear;
+        }
+
+        private static Color ShadeCheck(Vector2 p)
+        {
+            const float thickness = 0.14f;
+            var corner = new Vector2(-0.14f, -0.42f);
+            float shortArm = DistanceToSegment(p, new Vector2(-0.55f, 0f), corner);
+            float longArm = DistanceToSegment(p, corner, new Vector2(0.58f, 0.46f));
+            return Mathf.Min(shortArm, longArm) <= thickness ? Color.white : Color.clear;
         }
 
         private static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)

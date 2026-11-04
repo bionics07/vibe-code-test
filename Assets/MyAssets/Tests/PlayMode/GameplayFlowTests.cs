@@ -43,12 +43,101 @@ namespace VibeCodeTest.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            GameplayController.ResetSessionProgress();
+            yield return LoadGameplayScene();
+        }
+
+        private IEnumerator LoadGameplayScene()
+        {
             SceneManager.LoadScene(GameplayBuildIndex);
             yield return null;
             yield return null;
             controller = Object.FindAnyObjectByType<GameplayController>();
             Assert.IsNotNull(controller, "The gameplay scene needs a GameplayController.");
             Assert.IsNotNull(controller.Config, "The GameplayController needs a GameConfig.");
+        }
+
+        [UnityTest]
+        public IEnumerator FirstWinOfLevelOne_ShowsTheStreak_ThenLevelTwo()
+        {
+            Assert.IsFalse(controller.Streak.IsVisible);
+            SolveCurrentLevel();
+            Assert.IsFalse(controller.Streak.IsVisible, "The result panel comes first.");
+
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsTrue(controller.Streak.IsVisible);
+            Assert.IsFalse(controller.Result.IsVisible);
+            Assert.AreEqual(0, controller.LevelIndex);
+            Assert.AreEqual(Config.StreakTitle, controller.Streak.TitleLabel.text);
+
+            controller.Streak.ContinueButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator Streak_CountsFromZeroToOneAndChecksToday()
+        {
+            yield return OpenStreakScreen();
+
+            Assert.AreEqual("0", controller.Streak.NumberLabel.text);
+            Assert.IsFalse(controller.Streak.TodayCheck.enabled);
+
+            float total = Config.StreakFlameInDuration + Config.StreakCountDelay + Config.StreakPopDuration;
+            yield return new WaitForSecondsRealtime(total + 0.2f);
+
+            Assert.AreEqual("1", controller.Streak.NumberLabel.text);
+            Assert.IsTrue(controller.Streak.TodayCheck.enabled);
+            Assert.AreEqual(1f, controller.Streak.Flame.localScale.x, 0.001f);
+            Assert.AreEqual(1f, controller.Streak.NumberLabel.rectTransform.localScale.x, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Streak_AppearsOnlyOnce_EvenAfterLeavingTheScene()
+        {
+            yield return OpenStreakScreen();
+            controller.Streak.ContinueButton.onClick.Invoke();
+            yield return LoadGameplayScene();
+
+            Assert.AreEqual(0, controller.LevelIndex);
+            SolveCurrentLevel();
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator LosingLevelOne_DoesNotShowTheStreak()
+        {
+            foreach (int col in WrongColumns(0))
+            {
+                Tap(0, col);
+                Tap(0, col);
+            }
+
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(0, controller.LevelIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator RealMouseClickOnContinue_LeavesTheStreak()
+        {
+            yield return OpenStreakScreen();
+            yield return null;
+
+            yield return ClickWithMouse(CenterOf((RectTransform)controller.Streak.ContinueButton.transform));
+
+            Assert.IsFalse(controller.Streak.IsVisible);
+            Assert.AreEqual(1, controller.LevelIndex);
         }
 
         [Test]
@@ -196,6 +285,8 @@ namespace VibeCodeTest.Tests
                 Assert.AreEqual(isLast ? "Menu" : "Next", controller.Result.ActionLabel.text);
                 controller.Result.ActionButton.onClick.Invoke();
                 yield return null;
+                Assert.AreEqual(index == 0, !isLast && controller.Streak.IsVisible, $"Streak after level {index + 1}");
+                ContinuePastStreak();
                 yield return null;
             }
 
@@ -229,6 +320,7 @@ namespace VibeCodeTest.Tests
                 {
                     SolveCurrentLevel();
                     controller.Result.ActionButton.onClick.Invoke();
+                    ContinuePastStreak();
                 }
             }
         }
@@ -250,6 +342,18 @@ namespace VibeCodeTest.Tests
         [UnityTest]
         public IEnumerator Layout_KeepsEverythingOnScreenWithoutOverlap([ValueSource(nameof(SizesToCheck))] Vector2Int size)
         {
+            yield return RunAtScreenSize(size, AssertLayoutFits);
+        }
+
+        [UnityTest]
+        public IEnumerator StreakScreen_StaysWholeOnScreen([ValueSource(nameof(SizesToCheck))] Vector2Int size)
+        {
+            yield return OpenStreakScreen();
+            yield return RunAtScreenSize(size, AssertStreakFits);
+        }
+
+        private static IEnumerator RunAtScreenSize(Vector2Int size, System.Action check)
+        {
             UnityEditor.PlayModeWindow.GetRenderingResolution(out uint originalWidth, out uint originalHeight);
             UnityEditor.PlayModeWindow.SetCustomRenderingResolution((uint)size.x, (uint)size.y, "Layout test");
             try
@@ -266,12 +370,52 @@ namespace VibeCodeTest.Tests
 
                 yield return null;
                 yield return null;
-                AssertLayoutFits();
+                check();
             }
             finally
             {
                 UnityEditor.PlayModeWindow.SetCustomRenderingResolution(originalWidth, originalHeight, "Layout test");
             }
+        }
+
+        private void AssertStreakFits()
+        {
+            var screen = new Rect(0f, 0f, Screen.width, Screen.height);
+            StreakView streak = controller.Streak;
+            Rect flame = UnscaledBand(streak.Flame);
+            Rect[] bands =
+            {
+                flame,
+                ScreenRect(streak.NumberLabel.rectTransform),
+                ScreenRect(streak.TitleLabel.rectTransform),
+                ScreenRect(streak.WeekRow),
+                ScreenRect((RectTransform)streak.ContinueButton.transform),
+            };
+
+            for (int i = 0; i < bands.Length; i++)
+            {
+                AssertInside(screen, bands[i], $"Streak band {i}");
+                for (int j = i + 1; j < bands.Length; j++)
+                {
+                    Assert.IsFalse(Shrunk(bands[i]).Overlaps(Shrunk(bands[j])), $"Streak bands {i} and {j} overlap: {bands[i]}, {bands[j]}.");
+                }
+            }
+        }
+
+        // The flame may be mid-animation; its layout rect is what must fit.
+        private static Rect UnscaledBand(RectTransform rect)
+        {
+            Vector3 scale = rect.localScale;
+            rect.localScale = Vector3.one;
+            Rect result = ScreenRect(rect);
+            rect.localScale = scale;
+            return result;
+        }
+
+        private static Rect Shrunk(Rect rect)
+        {
+            const float tolerance = 0.5f;
+            return Rect.MinMaxRect(rect.xMin + tolerance, rect.yMin + tolerance, rect.xMax - tolerance, rect.yMax - tolerance);
         }
 
         private void AssertLayoutFits()
@@ -336,6 +480,22 @@ namespace VibeCodeTest.Tests
         private void Tap(int row, int col)
         {
             controller.Grid.ButtonAt(row, col).onClick.Invoke();
+        }
+
+        private IEnumerator OpenStreakScreen()
+        {
+            SolveCurrentLevel();
+            controller.Result.ActionButton.onClick.Invoke();
+            yield return null;
+            Assert.IsTrue(controller.Streak.IsVisible);
+        }
+
+        private void ContinuePastStreak()
+        {
+            if (controller != null && controller.Streak.IsVisible)
+            {
+                controller.Streak.ContinueButton.onClick.Invoke();
+            }
         }
 
         private void SolveCurrentLevel()

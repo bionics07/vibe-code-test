@@ -10,10 +10,15 @@ namespace VibeCodeTest.UI
     {
         private const int MainMenuBuildIndex = 1;
 
+        // Kept for the browser session: going back to the menu must not grant the streak again.
+        private static StreakProgress sessionStreak;
+
         [SerializeField]
         private GameConfig config;
 
         public GameConfig Config => config;
+
+        public StreakView Streak { get; private set; }
 
         public PuzzleGame Game { get; private set; }
 
@@ -25,8 +30,15 @@ namespace VibeCodeTest.UI
 
         public ResultPanel Result { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void ResetSessionProgress()
+        {
+            sessionStreak = null;
+        }
+
         private void Awake()
         {
+            sessionStreak ??= new StreakProgress(config.StreakLevelIndex);
             BuildScreen();
             StartLevel(0);
         }
@@ -57,6 +69,7 @@ namespace VibeCodeTest.UI
             Grid.CellTapped += OnCellTapped;
 
             Result = ResultPanel.Create(root, config);
+            Streak = StreakView.Create(root, config);
         }
 
         private void StartLevel(int levelIndex)
@@ -65,6 +78,7 @@ namespace VibeCodeTest.UI
             Game = new PuzzleGame(config.Levels[levelIndex].ToDefinition(), config.StartingLives, config.DoubleTapWindow);
             Grid.Build(Game.Level);
             Result.Hide();
+            Streak.Hide();
             Refresh();
         }
 
@@ -88,11 +102,24 @@ namespace VibeCodeTest.UI
             int nextLevel = LevelIndex + 1;
             if (nextLevel < config.Levels.Count)
             {
-                Result.Show($"Level {LevelIndex + 1} complete", "Next", () => StartLevel(nextLevel));
+                Result.Show($"Level {LevelIndex + 1} complete", "Next", () => LeaveWonLevel(nextLevel));
             }
             else
             {
                 Result.Show("All levels complete", "Menu", () => SceneManager.LoadScene(MainMenuBuildIndex));
+            }
+        }
+
+        private void LeaveWonLevel(int nextLevel)
+        {
+            if (sessionStreak.TryCelebrate(LevelIndex))
+            {
+                Result.Hide();
+                Streak.Show(sessionStreak.Days, () => StartLevel(nextLevel));
+            }
+            else
+            {
+                StartLevel(nextLevel);
             }
         }
 

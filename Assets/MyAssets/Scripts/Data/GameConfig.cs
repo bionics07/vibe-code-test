@@ -80,7 +80,78 @@ namespace VibeCodeTest.Data
         [SerializeField]
         private List<RegionColorEntry> regionColors = new List<RegionColorEntry>();
 
+        [Header("Fake streak")]
+        [SerializeField, Min(0), Tooltip("Zero-based level whose first completion grants the streak.")]
+        private int streakLevelIndex;
+
+        [SerializeField]
+        private string streakTitle = "day streak!";
+
+        [SerializeField]
+        private string streakContinueLabel = "Continue";
+
+        [SerializeField, Tooltip("One letter per day, starting on Sunday.")]
+        private string streakWeekLetters = "SMTWTFS";
+
+        [SerializeField]
+        private int streakNumberFontSize = 220;
+
+        [SerializeField]
+        private int streakTitleFontSize = 84;
+
+        [SerializeField]
+        private int streakWeekFontSize = 44;
+
+        [SerializeField, Min(0.01f)]
+        private float streakFlameInDuration = 0.45f;
+
+        [SerializeField, Min(0f)]
+        private float streakCountDelay = 0.35f;
+
+        [SerializeField, Min(0.01f)]
+        private float streakPopDuration = 0.3f;
+
+        [SerializeField, Min(0f), Tooltip("Extra scale at the peak of the pop when the number changes.")]
+        private float streakPopScale = 0.35f;
+
+        [SerializeField]
+        private Color streakAccentColor = new Color32(0xFF, 0x96, 0x00, 0xFF);
+
+        [SerializeField]
+        private Color streakFlameCoreColor = new Color32(0xFF, 0xC8, 0x00, 0xFF);
+
+        [SerializeField]
+        private Color streakPendingDayColor = new Color32(0xE5, 0xDD, 0xD8, 0xFF);
+
         public int StartingLives => startingLives;
+
+        public int StreakLevelIndex => streakLevelIndex;
+
+        public string StreakTitle => streakTitle;
+
+        public string StreakContinueLabel => streakContinueLabel;
+
+        public string StreakWeekLetters => streakWeekLetters;
+
+        public int StreakNumberFontSize => streakNumberFontSize;
+
+        public int StreakTitleFontSize => streakTitleFontSize;
+
+        public int StreakWeekFontSize => streakWeekFontSize;
+
+        public float StreakFlameInDuration => streakFlameInDuration;
+
+        public float StreakCountDelay => streakCountDelay;
+
+        public float StreakPopDuration => streakPopDuration;
+
+        public float StreakPopScale => streakPopScale;
+
+        public Color StreakAccentColor => streakAccentColor;
+
+        public Color StreakFlameCoreColor => streakFlameCoreColor;
+
+        public Color StreakPendingDayColor => streakPendingDayColor;
 
         public float DoubleTapWindow => doubleTapWindow;
 

@@ -48,6 +48,26 @@ namespace VibeCodeTest.UI
             return text;
         }
 
+        /// <summary>Adds text that shrinks to fit its rect, for labels shared by portrait and landscape.</summary>
+        public static Text AddFittedText(RectTransform rect, string content, int maxFontSize, Color color)
+        {
+            Text text = AddText(rect, content, maxFontSize, color);
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = maxFontSize;
+            text.fontStyle = FontStyle.Bold;
+            return text;
+        }
+
+        /// <summary>Adds a tinted sprite that keeps its aspect and fits inside its rect.</summary>
+        public static Image AddIcon(RectTransform rect, Sprite sprite, Color color)
+        {
+            Image image = AddImage(rect, color);
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            return image;
+        }
+
         public static Button AddButton(RectTransform rect, Image targetGraphic)
         {
             targetGraphic.raycastTarget = true;

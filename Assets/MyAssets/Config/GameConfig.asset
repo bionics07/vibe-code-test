@@ -59,3 +59,17 @@ MonoBehaviour:
     value: {r: 0.99215686, g: 0.6431373, b: 0.36862746, a: 1}
   - region: 9
     value: {r: 0.6509804, g: 0.43137255, b: 0.29411766, a: 1}
+  streakLevelIndex: 0
+  streakTitle: day streak!
+  streakContinueLabel: Continue
+  streakWeekLetters: SMTWTFS
+  streakNumberFontSize: 220
+  streakTitleFontSize: 84
+  streakWeekFontSize: 44
+  streakFlameInDuration: 0.45
+  streakCountDelay: 0.35
+  streakPopDuration: 0.3
+  streakPopScale: 0.35
+  streakAccentColor: {r: 1, g: 0.5882353, b: 0, a: 1}
+  streakFlameCoreColor: {r: 1, g: 0.78431374, b: 0, a: 1}
+  streakPendingDayColor: {r: 0.8980392, g: 0.8666667, b: 0.84705883, a: 1}
