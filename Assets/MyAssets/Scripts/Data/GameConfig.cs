@@ -173,8 +173,11 @@ namespace VibeCodeTest.Data
         private List<RegionColorEntry> regionColors = new List<RegionColorEntry>();
 
         [Header("Fake streak")]
-        [SerializeField, Min(0), Tooltip("Zero-based level whose first completion grants the streak.")]
+        [SerializeField, Min(0), Tooltip("Zero-based level whose completion shows the streak screen, every time.")]
         private int streakLevelIndex;
+
+        [SerializeField, Min(1), Tooltip("Number the screen counts up to. The streak is fake: nothing is tracked.")]
+        private int streakDays = 1;
 
         [SerializeField]
         private string streakScreenTitle = "Daily Streak";
@@ -300,6 +303,8 @@ namespace VibeCodeTest.Data
         public Color SoftShadowColor => softShadowColor;
 
         public int StreakLevelIndex => streakLevelIndex;
+
+        public int StreakDays => streakDays;
 
         public string StreakScreenTitle => streakScreenTitle;
 

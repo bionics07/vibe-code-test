@@ -93,6 +93,7 @@ MonoBehaviour:
   - region: 9
     value: {r: 0.6509804, g: 0.43137255, b: 0.29411766, a: 1}
   streakLevelIndex: 0
+  streakDays: 1
   streakScreenTitle: Daily Streak
   streakCurrentLabel: Current Streak
   streakBestFormat: 'Best Streak: {0}'

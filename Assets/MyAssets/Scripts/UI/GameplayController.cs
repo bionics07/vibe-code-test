@@ -12,9 +12,6 @@ namespace VibeCodeTest.UI
     {
         private const int MainMenuBuildIndex = 1;
 
-        // Kept for the browser session: going back to the menu must not grant the streak again.
-        private static StreakProgress sessionStreak;
-
         [SerializeField]
         private GameConfig config;
 
@@ -35,15 +32,8 @@ namespace VibeCodeTest.UI
 
         public ResultPanel Result { get; private set; }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void ResetSessionProgress()
-        {
-            sessionStreak = null;
-        }
-
         private void Awake()
         {
-            sessionStreak ??= new StreakProgress(config.StreakLevelIndex);
             BuildScreen();
             StartLevel(0);
         }
@@ -120,6 +110,11 @@ namespace VibeCodeTest.UI
 
         private void OnCellTapped(int row, int col)
         {
+            if (Game.Status != PuzzleStatus.Playing)
+            {
+                return;
+            }
+
             Game.Tap(row, col, Time.unscaledTime);
             Refresh();
 
@@ -154,10 +149,10 @@ namespace VibeCodeTest.UI
 
         private void LeaveWonLevel(int nextLevel)
         {
-            if (sessionStreak.TryCelebrate(LevelIndex))
+            if (LevelIndex == config.StreakLevelIndex)
             {
                 Result.Hide();
-                Streak.Show(sessionStreak.Days, () => StartLevel(nextLevel));
+                Streak.Show(config.StreakDays, () => StartLevel(nextLevel));
             }
             else
             {

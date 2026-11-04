@@ -45,7 +45,6 @@ namespace VibeCodeTest.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            GameplayController.ResetSessionProgress();
             yield return LoadGameplayScene();
         }
 
@@ -398,20 +397,34 @@ namespace VibeCodeTest.Tests
         }
 
         [UnityTest]
-        public IEnumerator Streak_AppearsOnlyOnce_EvenAfterLeavingTheScene()
+        public IEnumerator Streak_AppearsEveryTimeLevelOneIsCompleted()
         {
             yield return OpenStreakScreen();
             controller.Streak.ContinueButton.onClick.Invoke();
             yield return LoadGameplayScene();
 
             Assert.AreEqual(0, controller.LevelIndex);
-            SolveCurrentLevel();
-            yield return WaitForResultPanel();
-            controller.Result.ActionButton.onClick.Invoke();
-            yield return null;
+            yield return OpenStreakScreen();
+        }
 
-            Assert.IsFalse(controller.Streak.IsVisible);
+        [UnityTest]
+        public IEnumerator TapAfterWinning_DoesNotReopenTheResultPanelLater()
+        {
+            int[] solution = SolutionFor(controller.Game.Level);
+            SolveCurrentLevel();
+
+            // A late extra tap on the last cat, while the result panel is still waiting.
+            yield return new WaitForSecondsRealtime(Config.ResultPanelDelay * 0.7f);
+            Tap(solution.Length - 1, solution[solution.Length - 1]);
+
+            yield return new WaitForSecondsRealtime((Config.ResultPanelDelay * 0.3f) + SettleMargin);
+            Assert.IsTrue(controller.Result.IsVisible);
+            controller.Result.ActionButton.onClick.Invoke();
+            controller.Streak.ContinueButton.onClick.Invoke();
+
+            yield return new WaitForSecondsRealtime(Config.ResultPanelDelay + SettleMargin);
             Assert.AreEqual(1, controller.LevelIndex);
+            Assert.IsFalse(controller.Result.IsVisible, "A second timer must not reopen the panel on level 2.");
         }
 
         [UnityTest]
