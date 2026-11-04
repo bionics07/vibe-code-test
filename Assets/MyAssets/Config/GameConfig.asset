@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffbeb9137c853ae42b2a0fd02914f71d, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: VibeCodeTest::VibeCodeTest.Data.GameConfig
+  startingLives: 3
+  doubleTapWindow: 0.3
+  levels:
+  - {fileID: 11400000, guid: ba8523a30c1c5fd41b1220e685b9059a, type: 2}
+  - {fileID: 11400000, guid: 01f630e7612bac846a6eed3a116469a2, type: 2}
+  - {fileID: 11400000, guid: dbad00bddb1cb184d97ab2421ed656af, type: 2}
+  - {fileID: 11400000, guid: 13f6257823a6f854cb6ac1aa46c1210a, type: 2}
+  - {fileID: 11400000, guid: 1138d66ac17513d4b87422d18aa9fe1f, type: 2}
+  cellGapRatio: 0.13
+  boardPaddingRatio: 0.22
+  iconInsetRatio: 0.06
+  sideMargin: 40
+  hudTopMargin: 40
+  hudHeight: 140
+  boardBottomMargin: 240
+  hudFontSize: 54
+  resultTitleFontSize: 64
+  resultButtonFontSize: 56
+  resultPanelSize: {x: 820, y: 520}
+  backgroundColor: {r: 0.9647059, g: 0.9372549, b: 0.92156863, a: 1}
+  boardColor: {r: 1, g: 1, b: 1, a: 1}
+  inkColor: {r: 0.5411765, g: 0.30980393, b: 0.32156864, a: 1}
+  markColor: {r: 1, g: 1, b: 1, a: 1}
+  mistakeColor: {r: 1, g: 0.41568628, b: 0.16862746, a: 1}
+  dimColor: {r: 0, g: 0, b: 0, a: 0.55}
+  resultButtonColor: {r: 0.56078434, g: 0.8509804, b: 0.49411765, a: 1}
+  regionColors:
+  - region: 0
+    value: {r: 0.98039216, g: 0.8509804, b: 0.52156866, a: 1}
+  - region: 1
+    value: {r: 0.827451, g: 0.41960785, b: 0.5647059, a: 1}
+  - region: 2
+    value: {r: 0.8117647, g: 0.6666667, b: 0, a: 1}
+  - region: 3
+    value: {r: 0.56078434, g: 0.50980395, b: 0.8627451, a: 1}
+  - region: 4
+    value: {r: 0.98039216, g: 0.60784316, b: 0.8862745, a: 1}
+  - region: 5
+    value: {r: 0.22745098, g: 0.68235296, b: 0.7764706, a: 1}
+  - region: 6
+    value: {r: 0.56078434, g: 0.8509804, b: 0.49411765, a: 1}
+  - region: 7
+    value: {r: 0.16862746, g: 0.56078434, b: 0.33333334, a: 1}
+  - region: 8
+    value: {r: 0.99215686, g: 0.6431373, b: 0.36862746, a: 1}
+  - region: 9
+    value: {r: 0.6509804, g: 0.43137255, b: 0.29411766, a: 1}

@@ -1,0 +1,18 @@
+{
+    "name": "VibeCodeTest.Tests.PlayMode",
+    "rootNamespace": "VibeCodeTest.Tests",
+    "references": [
+        "VibeCodeTest",
+        "UnityEngine.UI",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
+}

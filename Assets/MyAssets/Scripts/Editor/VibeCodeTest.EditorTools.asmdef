@@ -1,0 +1,8 @@
+{
+    "name": "VibeCodeTest.EditorTools",
+    "rootNamespace": "VibeCodeTest.EditorTools",
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": false
+}

@@ -1,0 +1,8 @@
+{
+    "name": "VibeCodeTest",
+    "rootNamespace": "VibeCodeTest",
+    "references": [
+        "UnityEngine.UI"
+    ],
+    "autoReferenced": true
+}
